@@ -418,6 +418,7 @@ impl MappableCommand {
         syntax_workspace_symbol_picker, "Open workspace symbol picker from syntax information",
         lsp_or_syntax_workspace_symbol_picker, "Open workspace symbol picker from LSP or syntax information",
         diagnostics_picker, "Open diagnostic picker",
+        diagnostics_hover, "Open diagnostic hover window",
         workspace_diagnostics_picker, "Open workspace diagnostic picker",
         last_picker, "Open last picker",
         insert_at_line_start, "Insert at start of line",

@@ -30,7 +30,10 @@ use helix_view::{
 use crate::{
     compositor::{self, Compositor},
     job::{Callback, Job},
-    ui::{self, overlay::overlaid, FileLocation, Picker, Popup, PromptEvent},
+    ui::{
+        self, diagnostics_hover::DiagHover, overlay::overlaid, FileLocation, Picker, Popup,
+        PromptEvent,
+    },
 };
 
 use std::{
@@ -315,6 +318,43 @@ fn diag_picker(
     .truncate_start(false)
 }
 
+/// make a hover widget with the diagnostics at the cursor location
+pub fn diag_hover(cx: &mut Context, diagnostics: Vec<(lsp::Diagnostic, DiagnosticProvider)>) {
+    // flatten the map to a vec of (url, diag) pairs
+    let mut flat_diag = Vec::new();
+    flat_diag.reserve(diagnostics.len());
+
+    for (diag, provider) in diagnostics {
+        if let Some(_ls) = provider
+            .language_server_id()
+            .and_then(|id| cx.editor.language_server_by_id(id))
+        {
+            flat_diag.push((diag, provider));
+        }
+    }
+
+    flat_diag.sort_by(|a, b| {
+        a.0.severity
+            .unwrap_or(lsp::DiagnosticSeverity::HINT)
+            .cmp(&b.0.severity.unwrap_or(lsp::DiagnosticSeverity::HINT))
+    });
+
+    cx.jobs.callback(async move {
+        let call = move |editor: &mut Editor, compositor: &mut Compositor| {
+            if flat_diag.is_empty() {
+                editor.set_status("No diagnostics on this line");
+                return;
+            }
+
+            // create new popup
+            let contents = DiagHover::new(flat_diag, &editor.theme);
+            let popup = Popup::new(DiagHover::ID, contents).auto_close(true);
+            compositor.replace_or_push(DiagHover::ID, popup);
+        };
+        Ok(Callback::EditorCompositor(Box::new(call)))
+    });
+}
+
 pub fn symbol_picker(cx: &mut Context) {
     fn nested_to_flat(
         list: &mut Vec<SymbolInformationItem>,
@@ -578,6 +618,14 @@ pub fn diagnostics_picker(cx: &mut Context) {
         let diagnostics = cx.editor.diagnostics.get(&uri).cloned().unwrap_or_default();
         let picker = diag_picker(cx, [(uri, diagnostics)], DiagnosticsFormat::HideSourcePath);
         cx.push_layer(Box::new(overlaid(picker)));
+    }
+}
+
+pub fn diagnostics_hover(cx: &mut Context) {
+    let doc = doc!(cx.editor);
+    if let Some(uri) = doc.uri() {
+        let diagnostics = cx.editor.diagnostics.get(&uri).cloned().unwrap_or_default();
+        diag_hover(cx, diagnostics);
     }
 }
 
