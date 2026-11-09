@@ -1,4 +1,5 @@
 use helix_core::diagnostic::Severity;
+use helix_lsp::lsp::DiagnosticSeverity;
 use helix_view::theme::Style;
 use helix_view::Theme;
 
@@ -26,6 +27,16 @@ impl Styles {
             Severity::Info => self.info,
             Severity::Warning => self.warning,
             Severity::Error => self.error,
+        }
+    }
+
+    pub fn diag_severity_style(&self, severity: DiagnosticSeverity) -> Style {
+        match severity {
+            DiagnosticSeverity::HINT => self.hint,
+            DiagnosticSeverity::INFORMATION => self.info,
+            DiagnosticSeverity::WARNING => self.warning,
+            DiagnosticSeverity::ERROR => self.error,
+            _ => self.info,
         }
     }
 }
