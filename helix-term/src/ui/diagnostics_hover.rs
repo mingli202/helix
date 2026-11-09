@@ -31,39 +31,33 @@ impl Component for DiagHover {
         let margin = Margin::all(1);
         let area = area.inner(margin);
 
-        let styled_diag_spans = Spans::from(
-            self.diagnostics
-                .iter()
-                .map(|(diag, _diag_provider)| match diag.severity {
-                    None => Span::raw(""),
-                    Some(s) => Span::styled(&diag.message, self.styles.diag_severity_style(s)),
-                })
-                .collect::<Vec<_>>(),
-        );
-
-        let styled_diag = Text::from(styled_diag_spans);
-
-        let p = Paragraph::new(&styled_diag).wrap(Wrap { trim: false });
+        let t = diag_to_text(&self.diagnostics, &self.styles);
+        let p = Paragraph::new(&t);
 
         p.render(area, buf);
     }
 
     fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
-        let styled_diag_spans = self
-            .diagnostics
+        let t = diag_to_text(&self.diagnostics, &self.styles);
+        let p = Paragraph::new(&t);
+
+        Some(p.required_size(viewport.0))
+    }
+}
+
+fn diag_to_text<'a>(
+    diagnostics: &'a [(lsp::Diagnostic, DiagnosticProvider)],
+    styles: &'a Styles,
+) -> Text<'a> {
+    Text::from(
+        diagnostics
             .iter()
             .map(|(diag, _diag_provider)| {
                 Spans::from(match diag.severity {
                     None => Span::raw(""),
-                    Some(s) => Span::styled(&diag.message, self.styles.diag_severity_style(s)),
+                    Some(s) => Span::styled(&diag.message, styles.diag_severity_style(s)),
                 })
             })
-            .collect::<Vec<_>>();
-
-        let styled_diag = Text::from(styled_diag_spans);
-
-        let p = Paragraph::new(&styled_diag).wrap(Wrap { trim: false });
-
-        Some(p.required_size(viewport.0))
-    }
+            .collect::<Vec<_>>(),
+    )
 }
