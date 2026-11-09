@@ -9,39 +9,11 @@ use helix_view::annotations::diagnostics::{
     DiagnosticFilter, InlineDiagnosticAccumulator, InlineDiagnosticsConfig,
 };
 
-use helix_view::theme::Style;
 use helix_view::{Document, Theme};
 
+use crate::ui::diagnostics_styles::Styles;
 use crate::ui::document::{LinePos, TextRenderer};
 use crate::ui::text_decorations::Decoration;
-
-#[derive(Debug)]
-struct Styles {
-    hint: Style,
-    info: Style,
-    warning: Style,
-    error: Style,
-}
-
-impl Styles {
-    fn new(theme: &Theme) -> Styles {
-        Styles {
-            hint: theme.get("hint.diagnostic.inline"),
-            info: theme.get("info.diagnostic.inline"),
-            warning: theme.get("warning.diagnostic.inline"),
-            error: theme.get("error.diagnostic.inline"),
-        }
-    }
-
-    fn severity_style(&self, severity: Severity) -> Style {
-        match severity {
-            Severity::Hint => self.hint,
-            Severity::Info => self.info,
-            Severity::Warning => self.warning,
-            Severity::Error => self.error,
-        }
-    }
-}
 
 pub struct InlineDiagnostics<'a> {
     state: InlineDiagnosticAccumulator<'a>,
