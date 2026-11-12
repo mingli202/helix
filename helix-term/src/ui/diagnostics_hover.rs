@@ -53,6 +53,7 @@ impl Component for DiagHover {
     }
 }
 
+/// List of diagnostics to a Text widget with all the styles
 fn diag_to_text<'a>(
     diagnostics: &'a [(lsp::Diagnostic, DiagnosticProvider)],
     styles: &'a Styles,
@@ -60,10 +61,19 @@ fn diag_to_text<'a>(
     Text::from(
         diagnostics
             .iter()
-            .map(|(diag, _diag_provider)| {
+            .enumerate()
+            .map(|(i, (diag, _diag_provider))| {
                 Spans::from(match diag.severity {
                     None => Span::raw(""),
-                    Some(s) => Span::styled(&diag.message, styles.diag_severity_style(s)),
+                    Some(s) => Span::styled(
+                        format!(
+                            "{}. {} [{:?}]",
+                            i + 1,
+                            &diag.message,
+                            diag.source.as_ref().unwrap_or(&"none".to_string())
+                        ),
+                        styles.diag_severity_style(s),
+                    ),
                 })
             })
             .collect::<Vec<_>>(),

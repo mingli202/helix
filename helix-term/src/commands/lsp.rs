@@ -324,12 +324,17 @@ pub fn diag_hover(cx: &mut Context, diagnostics: Vec<(lsp::Diagnostic, Diagnosti
     let mut flat_diag = Vec::new();
     flat_diag.reserve(diagnostics.len());
 
+    let editor = &cx.editor;
+    let cursor_line_number = editor.cursor_line_number();
+
     for (diag, provider) in diagnostics {
         if let Some(_ls) = provider
             .language_server_id()
             .and_then(|id| cx.editor.language_server_by_id(id))
         {
-            flat_diag.push((diag, provider));
+            if diag.range.start.line == cursor_line_number as u32 {
+                flat_diag.push((diag, provider));
+            }
         }
     }
 
