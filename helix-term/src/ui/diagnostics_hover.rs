@@ -51,7 +51,7 @@ impl Component for DiagHover {
         let (content_width, content_height) = crate::ui::text::required_size(&t, max_text_width);
 
         let width = content_width + MARGIN_SIZE * 2;
-        let height = MARGIN_SIZE * 2 + content_height;
+        let height = content_height + MARGIN_SIZE * 2;
 
         Some((width, height))
     }
