@@ -1,5 +1,6 @@
 use helix_core::Diagnostic;
 use helix_view::graphics::{Margin, Rect};
+use helix_view::theme::Style;
 use helix_view::Theme;
 use tui::buffer::Buffer;
 use tui::text::{Span, Spans, Text};
@@ -12,6 +13,7 @@ use super::diagnostics_styles::Styles;
 pub struct DiagHover {
     diagnostics: Vec<Diagnostic>,
     styles: Styles,
+    fg: Style,
 }
 
 impl DiagHover {
@@ -21,6 +23,7 @@ impl DiagHover {
         DiagHover {
             diagnostics,
             styles: Styles::new(theme),
+            fg: theme.get("ui.text"),
         }
     }
 }
@@ -32,7 +35,7 @@ impl Component for DiagHover {
         let margin = Margin::all(MARGIN_SIZE);
         let area = area.inner(margin);
 
-        let t = diag_to_text(&self.diagnostics, &self.styles);
+        let t = diag_to_text(&self.diagnostics, &self.styles, &self.fg);
 
         let p = Paragraph::new(&t)
             .wrap(Wrap { trim: false })
@@ -42,7 +45,7 @@ impl Component for DiagHover {
     }
 
     fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
-        let t = diag_to_text(&self.diagnostics, &self.styles);
+        let t = diag_to_text(&self.diagnostics, &self.styles, &self.fg);
         let (content_width, content_height) = crate::ui::text::required_size(&t, viewport.0);
 
         let width = content_width + MARGIN_SIZE * 2;
@@ -53,21 +56,23 @@ impl Component for DiagHover {
 }
 
 /// List of diagnostics to a Text widget with all the styles
-fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles) -> Text<'a> {
+fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles, fg: &'a Style) -> Text<'a> {
     Text::from(
         diagnostics
             .iter()
             .enumerate()
             .map(|(i, diag)| {
-                Spans::from(Span::styled(
-                    format!(
-                        "{}. {} [{:?}]",
-                        i + 1,
-                        &diag.message,
-                        diag.source.as_ref().unwrap_or(&"none".to_string())
+                Spans::from(vec![
+                    Span::styled(format!("{}. ", i + 1), fg.clone()),
+                    Span::styled(
+                        format!(
+                            "{} [{:?}]",
+                            &diag.message,
+                            diag.source.as_ref().unwrap_or(&"none".to_string())
+                        ),
+                        styles.severity_style(diag.severity()),
                     ),
-                    styles.severity_style(diag.severity()),
-                ))
+                ])
             })
             .collect::<Vec<_>>(),
     )
