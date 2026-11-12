@@ -2435,6 +2435,18 @@ impl Editor {
         }
     }
 
+    /// Gets the primary cursor's line number
+    pub fn cursor_line_number(&self) -> usize {
+        let (view, doc) = current_ref!(self);
+
+        let text = doc.text().slice(..);
+        let current_line = doc
+            .text()
+            .char_to_line(doc.selection(view.id).primary().cursor(text));
+
+        current_line
+    }
+
     /// Closes language servers with timeout. The default timeout is 10000 ms, use
     /// `timeout` parameter to override this.
     pub async fn close_language_servers(&self, timeout: Option<u64>) {
