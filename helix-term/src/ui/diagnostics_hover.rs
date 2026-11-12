@@ -45,8 +45,10 @@ impl Component for DiagHover {
     }
 
     fn required_size(&mut self, viewport: (u16, u16)) -> Option<(u16, u16)> {
+        let max_text_width = viewport.0.saturating_sub(MARGIN_SIZE * 2).clamp(10, 120);
+
         let t = diag_to_text(&self.diagnostics, &self.styles, &self.fg);
-        let (content_width, content_height) = crate::ui::text::required_size(&t, viewport.0);
+        let (content_width, content_height) = crate::ui::text::required_size(&t, max_text_width);
 
         let width = content_width + MARGIN_SIZE * 2;
         let height = MARGIN_SIZE * 2 + content_height;
@@ -57,23 +59,32 @@ impl Component for DiagHover {
 
 /// List of diagnostics to a Text widget with all the styles
 fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles, fg: &'a Style) -> Text<'a> {
-    Text::from(
-        diagnostics
-            .iter()
-            .enumerate()
-            .map(|(i, diag)| {
-                Spans::from(vec![
-                    Span::styled(format!("{}. ", i + 1), fg.clone()),
-                    Span::styled(
-                        format!(
-                            "{} [{:?}]",
-                            &diag.message,
-                            diag.source.as_ref().unwrap_or(&"none".to_string())
-                        ),
-                        styles.severity_style(diag.severity()),
-                    ),
-                ])
-            })
-            .collect::<Vec<_>>(),
-    )
+    let mut lines = Vec::new();
+
+    for (i, diag) in diagnostics.iter().enumerate() {
+        let style = styles.severity_style(diag.severity());
+        let prefix = format!("{}. ", i + 1);
+        let indent = " ".repeat(prefix.len());
+
+        let mut message_lines = diag.message.lines();
+        let first = message_lines.next().unwrap_or_default();
+        let first = match &diag.source {
+            Some(source) => format!("{first} [{source}]"),
+            None => first.to_string(),
+        };
+        lines.push(Spans::from(vec![
+            Span::styled(prefix, *fg),
+            Span::styled(first, style),
+        ]));
+
+        // continuation lines are indented to line up with the first line
+        for line in message_lines {
+            lines.push(Spans::from(vec![
+                Span::raw(indent.clone()),
+                Span::styled(line, style),
+            ]));
+        }
+    }
+
+    Text::from(lines)
 }

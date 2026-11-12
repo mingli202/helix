@@ -1,6 +1,6 @@
 mod completion;
-pub mod diagnostics_hover;
-pub mod diagnostics_styles;
+pub(crate) mod diagnostics_hover;
+pub(crate) mod diagnostics_styles;
 mod document;
 pub(crate) mod editor;
 mod info;
