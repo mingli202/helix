@@ -88,3 +88,89 @@ fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles, fg: &'a S
 
     Text::from(lines)
 }
+
+#[cfg(test)]
+mod tests {
+    use helix_core::diagnostic::{DiagnosticProvider, LanguageServerId, Range, Severity};
+
+    use super::*;
+
+    fn diagnostic(message: &str, source: Option<&str>) -> Diagnostic {
+        Diagnostic {
+            range: Range { start: 0, end: 1 },
+            ends_at_word: false,
+            starts_at_word: false,
+            zero_width: false,
+            line: 0,
+            message: message.to_string(),
+            severity: Some(Severity::Error),
+            code: None,
+            provider: DiagnosticProvider::Lsp {
+                server_id: LanguageServerId::default(),
+                identifier: None,
+            },
+            tags: Vec::new(),
+            source: source.map(str::to_string),
+            data: None,
+        }
+    }
+
+    /// Renders each line of the text to a plain string, dropping the styles
+    fn render(diagnostics: &[Diagnostic]) -> Vec<String> {
+        let theme = Theme::default();
+        let styles = Styles::new(&theme);
+        let fg = Style::default();
+
+        diag_to_text(diagnostics, &styles, &fg)
+            .lines
+            .iter()
+            .map(|spans| spans.0.iter().map(|span| span.content.as_ref()).collect())
+            .collect()
+    }
+
+    #[test]
+    fn test_source_is_appended() {
+        assert_eq!(
+            render(&[diagnostic("unused variable", Some("rustc"))]),
+            ["1. unused variable [rustc]"]
+        );
+    }
+
+    #[test]
+    fn test_missing_source_is_omitted() {
+        assert_eq!(
+            render(&[diagnostic("unused variable", None)]),
+            ["1. unused variable"]
+        );
+    }
+
+    #[test]
+    fn test_multiline_message_is_indented() {
+        assert_eq!(
+            render(&[diagnostic(
+                "mismatched types\nexpected `u32`\nfound `i32`",
+                Some("rustc")
+            )]),
+            [
+                "1. mismatched types [rustc]",
+                "   expected `u32`",
+                "   found `i32`",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_diagnostics_are_numbered() {
+        let diagnostics: Vec<_> = (0..10)
+            .map(|i| diagnostic(&format!("message {i}\nmore"), None))
+            .collect();
+        let lines = render(&diagnostics);
+
+        assert_eq!(lines.len(), 20);
+        assert_eq!(lines[0], "1. message 0");
+        assert_eq!(lines[2], "2. message 1");
+        // the indent grows with the width of the number
+        assert_eq!(lines[18], "10. message 9");
+        assert_eq!(lines[19], "    more");
+    }
+}
