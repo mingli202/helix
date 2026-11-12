@@ -318,7 +318,7 @@ fn diag_picker(
     .truncate_start(false)
 }
 
-/// make a hover widget with the diagnostics at the cursor location
+/// make a hover widget with the given diagnostics
 pub fn diag_hover(cx: &mut Context, diagnostics: Vec<Diagnostic>) {
     cx.jobs.callback(async move {
         let call = move |editor: &mut Editor, compositor: &mut Compositor| {
@@ -613,12 +613,13 @@ pub fn diagnostics_hover(cx: &mut Context) {
 
     let mut diagnostics = doc
         .diagnostics()
-        .into_iter()
+        .iter()
         .filter(|d| d.line == cursor_line_number)
         .cloned()
         .collect::<Vec<_>>();
 
-    diagnostics.sort_by(|a, b| a.severity().cmp(&b.severity()));
+    // most severe first
+    diagnostics.sort_by_key(|d| std::cmp::Reverse(d.severity()));
 
     diag_hover(cx, diagnostics);
 }
