@@ -15,7 +15,7 @@ use super::{align_view, push_jump, Align, Context, Editor};
 
 use helix_core::{
     diagnostic::DiagnosticProvider, syntax::config::LanguageServerFeature,
-    text_annotations::InlineAnnotation, Selection, Uri,
+    text_annotations::InlineAnnotation, Diagnostic, Selection, Uri,
 };
 use helix_stdx::path;
 use helix_view::{
@@ -319,40 +319,16 @@ fn diag_picker(
 }
 
 /// make a hover widget with the diagnostics at the cursor location
-pub fn diag_hover(cx: &mut Context, diagnostics: Vec<(lsp::Diagnostic, DiagnosticProvider)>) {
-    // flatten the map to a vec of (url, diag) pairs
-    let mut flat_diag = Vec::new();
-    flat_diag.reserve(diagnostics.len());
-
-    let editor = &cx.editor;
-    let cursor_line_number = editor.cursor_line_number();
-
-    for (diag, provider) in diagnostics {
-        if let Some(_ls) = provider
-            .language_server_id()
-            .and_then(|id| cx.editor.language_server_by_id(id))
-        {
-            if diag.range.start.line == cursor_line_number as u32 {
-                flat_diag.push((diag, provider));
-            }
-        }
-    }
-
-    flat_diag.sort_by(|a, b| {
-        a.0.severity
-            .unwrap_or(lsp::DiagnosticSeverity::HINT)
-            .cmp(&b.0.severity.unwrap_or(lsp::DiagnosticSeverity::HINT))
-    });
-
+pub fn diag_hover(cx: &mut Context, diagnostics: Vec<Diagnostic>) {
     cx.jobs.callback(async move {
         let call = move |editor: &mut Editor, compositor: &mut Compositor| {
-            if flat_diag.is_empty() {
+            if diagnostics.is_empty() {
                 editor.set_status("No diagnostics on this line");
                 return;
             }
 
             // create new popup
-            let contents = DiagHover::new(flat_diag, &editor.theme);
+            let contents = DiagHover::new(diagnostics, &editor.theme);
             let popup = Popup::new(DiagHover::ID, contents).auto_close(true);
             compositor.replace_or_push(DiagHover::ID, popup);
         };
@@ -626,12 +602,25 @@ pub fn diagnostics_picker(cx: &mut Context) {
     }
 }
 
+/// Creates a diagnostics hover window like nvim
 pub fn diagnostics_hover(cx: &mut Context) {
-    let doc = doc!(cx.editor);
-    if let Some(uri) = doc.uri() {
-        let diagnostics = cx.editor.diagnostics.get(&uri).cloned().unwrap_or_default();
-        diag_hover(cx, diagnostics);
-    }
+    let editor = &cx.editor;
+    let (view, doc) = current_ref!(editor);
+    let cursor_line_number = doc
+        .selection(view.id)
+        .primary()
+        .cursor_line(doc.text().slice(..));
+
+    let mut diagnostics = doc
+        .diagnostics()
+        .into_iter()
+        .filter(|d| d.line == cursor_line_number)
+        .cloned()
+        .collect::<Vec<_>>();
+
+    diagnostics.sort_by(|a, b| a.severity().cmp(&b.severity()));
+
+    diag_hover(cx, diagnostics);
 }
 
 pub fn workspace_diagnostics_picker(cx: &mut Context) {

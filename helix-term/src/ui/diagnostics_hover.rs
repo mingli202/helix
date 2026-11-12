@@ -1,5 +1,4 @@
-use helix_core::diagnostic::DiagnosticProvider;
-use helix_lsp::lsp;
+use helix_core::Diagnostic;
 use helix_view::graphics::{Margin, Rect};
 use helix_view::Theme;
 use tui::buffer::Buffer;
@@ -11,14 +10,14 @@ use crate::compositor::{Component, Context};
 use super::diagnostics_styles::Styles;
 
 pub struct DiagHover {
-    diagnostics: Vec<(lsp::Diagnostic, DiagnosticProvider)>,
+    diagnostics: Vec<Diagnostic>,
     styles: Styles,
 }
 
 impl DiagHover {
     pub const ID: &'static str = "diag-hover";
 
-    pub fn new(diagnostics: Vec<(lsp::Diagnostic, DiagnosticProvider)>, theme: &Theme) -> Self {
+    pub fn new(diagnostics: Vec<Diagnostic>, theme: &Theme) -> Self {
         DiagHover {
             diagnostics,
             styles: Styles::new(theme),
@@ -54,27 +53,21 @@ impl Component for DiagHover {
 }
 
 /// List of diagnostics to a Text widget with all the styles
-fn diag_to_text<'a>(
-    diagnostics: &'a [(lsp::Diagnostic, DiagnosticProvider)],
-    styles: &'a Styles,
-) -> Text<'a> {
+fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles) -> Text<'a> {
     Text::from(
         diagnostics
             .iter()
             .enumerate()
-            .map(|(i, (diag, _diag_provider))| {
-                Spans::from(match diag.severity {
-                    None => Span::raw(""),
-                    Some(s) => Span::styled(
-                        format!(
-                            "{}. {} [{:?}]",
-                            i + 1,
-                            &diag.message,
-                            diag.source.as_ref().unwrap_or(&"none".to_string())
-                        ),
-                        styles.diag_severity_style(s),
+            .map(|(i, diag)| {
+                Spans::from(Span::styled(
+                    format!(
+                        "{}. {} [{:?}]",
+                        i + 1,
+                        &diag.message,
+                        diag.source.as_ref().unwrap_or(&"none".to_string())
                     ),
-                })
+                    styles.severity_style(diag.severity()),
+                ))
             })
             .collect::<Vec<_>>(),
     )
