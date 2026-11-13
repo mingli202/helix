@@ -8,11 +8,13 @@ use tui::widgets::{Paragraph, Widget, Wrap};
 
 use crate::compositor::{Component, Context};
 
-use super::diagnostics_styles::Styles;
+use super::diagnostics_styles::DiagnosticStyles;
 
+/// The UI component for showing the current diagnostics under
+/// the cursor line in a popup window.
 pub struct DiagHover {
     diagnostics: Vec<Diagnostic>,
-    styles: Styles,
+    styles: DiagnosticStyles,
     fg: Style,
 }
 
@@ -22,7 +24,7 @@ impl DiagHover {
     pub fn new(diagnostics: Vec<Diagnostic>, theme: &Theme) -> Self {
         DiagHover {
             diagnostics,
-            styles: Styles::new(theme),
+            styles: DiagnosticStyles::new(theme),
             fg: theme.get("ui.text"),
         }
     }
@@ -58,7 +60,11 @@ impl Component for DiagHover {
 }
 
 /// List of diagnostics to a Text widget with all the styles
-fn diag_to_text<'a>(diagnostics: &'a [Diagnostic], styles: &'a Styles, fg: &'a Style) -> Text<'a> {
+fn diag_to_text<'a>(
+    diagnostics: &'a [Diagnostic],
+    styles: &'a DiagnosticStyles,
+    fg: &'a Style,
+) -> Text<'a> {
     let mut lines = Vec::new();
 
     for (i, diag) in diagnostics.iter().enumerate() {
@@ -118,7 +124,7 @@ mod tests {
     /// Renders each line of the text to a plain string, dropping the styles
     fn render(diagnostics: &[Diagnostic]) -> Vec<String> {
         let theme = Theme::default();
-        let styles = Styles::new(&theme);
+        let styles = DiagnosticStyles::new(&theme);
         let fg = Style::default();
 
         diag_to_text(diagnostics, &styles, &fg)

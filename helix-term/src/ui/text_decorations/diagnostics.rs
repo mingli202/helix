@@ -11,14 +11,14 @@ use helix_view::annotations::diagnostics::{
 
 use helix_view::{Document, Theme};
 
-use crate::ui::diagnostics_styles::Styles;
+use crate::ui::diagnostics_styles::DiagnosticStyles;
 use crate::ui::document::{LinePos, TextRenderer};
 use crate::ui::text_decorations::Decoration;
 
 pub struct InlineDiagnostics<'a> {
     state: InlineDiagnosticAccumulator<'a>,
     eol_diagnostics: DiagnosticFilter,
-    styles: Styles,
+    styles: DiagnosticStyles,
 }
 
 impl<'a> InlineDiagnostics<'a> {
@@ -31,7 +31,7 @@ impl<'a> InlineDiagnostics<'a> {
     ) -> Self {
         InlineDiagnostics {
             state: InlineDiagnosticAccumulator::new(cursor, doc, config),
-            styles: Styles::new(theme),
+            styles: DiagnosticStyles::new(theme),
             eol_diagnostics,
         }
     }
@@ -50,7 +50,7 @@ struct Renderer<'a, 'b> {
     first_row: u16,
     row: u16,
     config: &'a InlineDiagnosticsConfig,
-    styles: &'a Styles,
+    styles: &'a DiagnosticStyles,
 }
 
 impl Renderer<'_, '_> {

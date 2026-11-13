@@ -318,7 +318,7 @@ fn diag_picker(
     .truncate_start(false)
 }
 
-/// make a hover widget with the given diagnostics
+/// make a popup with the given diagnostics
 pub fn diag_hover(cx: &mut Context, diagnostics: Vec<Diagnostic>) {
     cx.jobs.callback(async move {
         let call = move |editor: &mut Editor, compositor: &mut Compositor| {
@@ -602,7 +602,7 @@ pub fn diagnostics_picker(cx: &mut Context) {
     }
 }
 
-/// Creates a diagnostics hover window like nvim
+/// Show the diagnostics in a hover window sorted with the most severe first
 pub fn diagnostics_hover(cx: &mut Context) {
     let editor = &cx.editor;
     let (view, doc) = current_ref!(editor);

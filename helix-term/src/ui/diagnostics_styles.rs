@@ -3,16 +3,16 @@ use helix_view::theme::Style;
 use helix_view::Theme;
 
 #[derive(Debug)]
-pub struct Styles {
+pub struct DiagnosticStyles {
     hint: Style,
     info: Style,
     warning: Style,
     error: Style,
 }
 
-impl Styles {
-    pub fn new(theme: &Theme) -> Styles {
-        Styles {
+impl DiagnosticStyles {
+    pub fn new(theme: &Theme) -> DiagnosticStyles {
+        DiagnosticStyles {
             hint: theme.get("hint.diagnostic.inline"),
             info: theme.get("info.diagnostic.inline"),
             warning: theme.get("warning.diagnostic.inline"),
