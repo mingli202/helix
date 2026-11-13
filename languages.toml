@@ -3714,6 +3714,18 @@ name = "gas"
 source = { git = "https://github.com/sirius94/tree-sitter-gas", rev = "5d6c0a0b4d7b6f35913906ba922fe38064a9bede" }
 
 [[language]]
+name = "asm"
+scope = "source.asm"
+file-types = ["asm", "s"]
+injection-regex = "asm"
+comment-token = ";"
+indent = { tab-width = 4, unit = "    " }
+
+[[grammar]]
+name = "asm"
+source = { git = "https://github.com/RubixDev/tree-sitter-asm", rev = "839741fef4dab5128952334624905c82b40c7133" }
+
+[[language]]
 name = "rst"
 scope = "source.rst"
 comment-token = ".."
