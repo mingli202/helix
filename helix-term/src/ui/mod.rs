@@ -329,6 +329,17 @@ pub fn file_explorer(root: PathBuf, editor: &Editor) -> Result<FileExplorer, std
     let directory_style = editor.theme.get("ui.text.directory");
     let directory_content = directory_content(&root, editor)?;
 
+    // Focus the current buffer's file, or the directory under `root` that contains it.
+    let initial_cursor = helix_view::current_ref!(editor)
+        .1
+        .path()
+        .and_then(|doc_path| {
+            directory_content.iter().position(|(path, is_dir)| {
+                doc_path == path || (*is_dir && doc_path.starts_with(path))
+            })
+        })
+        .unwrap_or(0) as u32;
+
     let columns = [PickerColumn::new(
         "path",
         |(path, is_dir): &(PathBuf, bool), (root, directory_style): &(PathBuf, Style)| {
@@ -368,6 +379,7 @@ pub fn file_explorer(root: PathBuf, editor: &Editor) -> Result<FileExplorer, std
             }
         },
     )
+    .with_initial_cursor(initial_cursor)
     .with_preview(|_editor, (path, _is_dir)| Some((path.as_path().into(), None)));
 
     Ok(picker)
