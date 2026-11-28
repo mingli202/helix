@@ -1586,6 +1586,8 @@ shebangs = ["ocaml", "ocamlrun", "ocamlscript"]
 block-comment-tokens = { start = "(*", end = "*)" }
 language-servers = [ "ocamllsp" ]
 indent = { tab-width = 2, unit = "  " }
+auto-format = true
+formatter = { command = "ocamlformat", args = ["--enable-outside-detected-project", "--name", "%{buffer_name}", "-"] }
 
 [language.auto-pairs]
 '(' = ')'
